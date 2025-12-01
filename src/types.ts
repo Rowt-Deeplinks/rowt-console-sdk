@@ -17,9 +17,16 @@ export interface RowtInteraction {
   link: RowtLink;
   referer?: string;
   country?: string;
+  city?: string;
+  ip?: string;
   device?: string;
   os?: string;
   browser?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
   timestamp: Date;
 }
 
