@@ -110,3 +110,17 @@ export interface TierStats {
     interactions: number;
   };
 }
+
+export interface CreateLinkDTO {
+  projectId: string;
+  apiKey: string;
+  url: string;
+  customShortcode?: string;
+  expiration?: Date;
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  fallbackUrlOverride?: string;
+  additionalMetadata?: Record<string, any>;
+  properties?: Record<string, any>;
+}

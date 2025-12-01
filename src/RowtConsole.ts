@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from "axios";
 import {
+  CreateLinkDTO,
   CreateProjectDTO,
   RowtGetProjectOptions,
   RowtLoginDTO,
@@ -276,6 +277,14 @@ class RowtConsole {
 
   async getUserTier(userId: string): Promise<TierStats> {
     const response = await this.client.post("/users/tier", { userId });
+    return response.data;
+  }
+
+  async createLink(link: CreateLinkDTO): Promise<string> {
+    const response: AxiosResponse<string> = await this.client.post(
+      "/link",
+      link,
+    );
     return response.data;
   }
 }
