@@ -14,10 +14,15 @@ import {
   UsageStats,
 } from "./types";
 
+interface RefreshSubscriber {
+  onSuccess: (token: string) => void;
+  onError: (error: Error) => void;
+}
+
 class RowtConsole {
   private client: AxiosInstance;
   private isRefreshing = false;
-  private refreshSubscribers: Array<(token: string) => void> = [];
+  private refreshSubscribers: RefreshSubscriber[] = [];
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -39,7 +44,7 @@ class RowtConsole {
     // Response interceptor to handle 401 errors
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
+      async (error) => {
         const { config, response } = error;
         if (response && response.status === 401 && !config._retry) {
           console.log("401 detected, initiating token refresh...");
@@ -53,9 +58,10 @@ class RowtConsole {
                 console.log("Token refresh successful.");
                 this.onRefreshed(newToken);
               })
-              .catch(() => {
-                console.log("Token refresh failed, clearing tokens.");
+              .catch((err) => {
+                console.log("Token refresh failed, clearing tokens.", err);
                 this.clearTokens();
+                this.onRefreshFailed(err);
               })
               .finally(() => {
                 this.isRefreshing = false;
@@ -63,11 +69,17 @@ class RowtConsole {
           }
 
           return new Promise((resolve, reject) => {
-            this.subscribeTokenRefresh((token: string) => {
-              console.log("Retrying request with new token...");
-              config.headers.Authorization = `Bearer ${token}`;
-              resolve(this.client(config));
-            });
+            this.subscribeTokenRefresh(
+              (token: string) => {
+                console.log("Retrying request with new token...");
+                config.headers.Authorization = `Bearer ${token}`;
+                resolve(this.client(config));
+              },
+              (error: Error) => {
+                console.log("Request failed due to refresh failure");
+                reject(error);
+              }
+            );
           });
         }
 
@@ -76,12 +88,20 @@ class RowtConsole {
     );
   }
 
-  private subscribeTokenRefresh(callback: (token: string) => void) {
-    this.refreshSubscribers.push(callback);
+  private subscribeTokenRefresh(
+    onSuccess: (token: string) => void,
+    onError: (error: Error) => void
+  ) {
+    this.refreshSubscribers.push({ onSuccess, onError });
   }
 
   private onRefreshed(newToken: string) {
-    this.refreshSubscribers.forEach((callback) => callback(newToken));
+    this.refreshSubscribers.forEach(({ onSuccess }) => onSuccess(newToken));
+    this.refreshSubscribers = [];
+  }
+
+  private onRefreshFailed(error: Error) {
+    this.refreshSubscribers.forEach(({ onError }) => onError(error));
     this.refreshSubscribers = [];
   }
 
@@ -286,6 +306,27 @@ class RowtConsole {
       link,
     );
     return response.data;
+  }
+
+  // Validate current tokens by attempting to fetch user profile
+  async validateTokens(): Promise<boolean> {
+    try {
+      await this.getProfile();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Manually trigger token refresh
+  async manualRefreshToken(): Promise<boolean> {
+    try {
+      await this.refreshToken();
+      return true;
+    } catch (error) {
+      this.clearTokens();
+      return false;
+    }
   }
 }
 
