@@ -1,5 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from "axios";
 import {
+  AnalyticsFilters,
+  AnalyticsResponse,
   CreateLinkDTO,
   CreateProjectDTO,
   RowtGetProjectOptions,
@@ -246,6 +248,54 @@ class RowtConsole {
       payload,
     );
     return response.data;
+  }
+
+  async getAnalytics(
+    projectId: string,
+    startDate: Date,
+    endDate: Date,
+    filters?: AnalyticsFilters,
+  ): Promise<AnalyticsResponse> {
+    if (!projectId) {
+      throw new Error("Missing projectId");
+    }
+
+    const params = new URLSearchParams({
+      projectId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+
+    // Add filters if provided
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    const response = await this.client.get(`/analytics?${params.toString()}`);
+
+    // Parse dates
+    const data = response.data;
+    return {
+      query: {
+        ...data.query,
+        startDate: new Date(data.query.startDate),
+        endDate: new Date(data.query.endDate),
+        executedAt: new Date(data.query.executedAt),
+      },
+      summary: data.summary,
+      timeSeries: {
+        ...data.timeSeries,
+        data: data.timeSeries.data.map((d: any) => ({
+          ...d,
+          timestamp: new Date(d.timestamp),
+        })),
+      },
+      aggregations: data.aggregations,
+    };
   }
 
   private storeTokens(tokens: RowtTokens) {

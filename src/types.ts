@@ -131,3 +131,76 @@ export interface CreateLinkDTO {
   additionalMetadata?: Record<string, any>;
   properties?: Record<string, any>;
 }
+
+export interface AnalyticsQuery {
+  projectId: string;
+  startDate: Date;
+  endDate: Date;
+  executedAt: Date;
+  appliedFilters?: Record<string, any>;
+}
+
+export interface AnalyticsSummary {
+  totalInteractions: number;
+  uniqueVisitors: number;
+  timeRange: string;
+}
+
+export interface TimeSeriesDataPoint {
+  timestamp: Date;
+  count: number;
+  label: string;
+}
+
+export interface TimeSeries {
+  granularity: 'hour' | 'day';
+  data: TimeSeriesDataPoint[];
+}
+
+export interface AggregationItem {
+  value: string;
+  count: number;
+  percentage: number;
+}
+
+export interface LinkAggregationItem extends AggregationItem {
+  linkTitle: string | null;
+  linkUrl: string;
+}
+
+export interface Aggregations {
+  topDestinations: AggregationItem[];
+  topLinks: LinkAggregationItem[];
+  topReferrers: AggregationItem[];
+  topCountries: AggregationItem[];
+  topCities: AggregationItem[];
+  linkTypes: AggregationItem[];
+  topOS: AggregationItem[];
+  topBrowsers: AggregationItem[];
+  topDevices: AggregationItem[];
+  topUtmSources: AggregationItem[];
+  topUtmMediums: AggregationItem[];
+  topUtmCampaigns: AggregationItem[];
+}
+
+export interface AnalyticsResponse {
+  query: AnalyticsQuery;
+  summary: AnalyticsSummary;
+  timeSeries: TimeSeries;
+  aggregations: Aggregations;
+}
+
+export interface AnalyticsFilters {
+  linkId?: string;
+  country?: string;
+  city?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  referer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  topN?: number;
+  timezone?: string;
+}
