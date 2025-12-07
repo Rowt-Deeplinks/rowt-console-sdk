@@ -1,5 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from "axios";
 import {
+  AnalyticsBreakdownRequest,
+  AnalyticsBreakdownResponse,
   AnalyticsFilters,
   AnalyticsResponse,
   CreateLinkDTO,
@@ -24,9 +26,16 @@ interface RefreshSubscriber {
 }
 
 class RowtConsole {
+  static DEBUG = false;
   private client: AxiosInstance;
   private isRefreshing = false;
   private refreshSubscribers: RefreshSubscriber[] = [];
+
+  private get debug() {
+    return new Proxy(console, {
+      get: (target, prop) => RowtConsole.DEBUG ? target[prop as keyof Console] : () => {}
+    }) as Console;
+  }
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -51,19 +60,19 @@ class RowtConsole {
       async (error) => {
         const { config, response } = error;
         if (response && response.status === 401 && !config._retry) {
-          console.log("401 detected, initiating token refresh...");
+          this.debug.log("401 detected, initiating token refresh...");
           config._retry = true;
 
           if (!this.isRefreshing) {
             this.isRefreshing = true;
-            console.log("Refreshing token...");
+            this.debug.log("Refreshing token...");
             this.refreshToken()
               .then((newToken) => {
-                console.log("Token refresh successful.");
+                this.debug.log("Token refresh successful.");
                 this.onRefreshed(newToken);
               })
               .catch((err) => {
-                console.log("Token refresh failed, clearing tokens.", err);
+                this.debug.log("Token refresh failed, clearing tokens.", err);
                 this.clearTokens();
                 this.onRefreshFailed(err);
               })
@@ -75,12 +84,12 @@ class RowtConsole {
           return new Promise((resolve, reject) => {
             this.subscribeTokenRefresh(
               (token: string) => {
-                console.log("Retrying request with new token...");
+                this.debug.log("Retrying request with new token...");
                 config.headers.Authorization = `Bearer ${token}`;
                 resolve(this.client(config));
               },
               (error: Error) => {
-                console.log("Request failed due to refresh failure");
+                this.debug.log("Request failed due to refresh failure");
                 reject(error);
               }
             );
@@ -168,13 +177,13 @@ class RowtConsole {
   }
 
   async validateUser(RowtLoginDTO: RowtLoginDTO): Promise<boolean> {
-    console.log("Validating user with credentials:", RowtLoginDTO);
+    this.debug.log("Validating user with credentials:", RowtLoginDTO);
     const response: AxiosResponse<{ isValid: boolean }> =
       await this.client.post("/auth/validate", RowtLoginDTO);
-    console.log("Validation response:", response.data);
+    this.debug.log("Validation response:", response.data);
     const { isValid } = response.data;
 
-    console.log("User validation result:", isValid);
+    this.debug.log("User validation result:", isValid);
 
     return isValid;
   }
@@ -300,6 +309,50 @@ class RowtConsole {
     };
   }
 
+  async getAnalyticsBreakdown(
+    request: AnalyticsBreakdownRequest
+  ): Promise<AnalyticsBreakdownResponse> {
+    // Validate required fields
+    if (!request.projectId) {
+      throw new Error("Missing projectId");
+    }
+    if (!request.dimension) {
+      throw new Error("Missing dimension");
+    }
+    if (!request.startDate || !request.endDate) {
+      throw new Error("Missing startDate or endDate");
+    }
+
+    // Build payload
+    const payload = {
+      projectId: request.projectId,
+      dimension: request.dimension,
+      startDate: request.startDate.toISOString(),
+      endDate: request.endDate.toISOString(),
+      timezone: request.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      limit: request.limit || 50,
+      offset: request.offset || 0,
+      filters: request.filters || {},
+    };
+
+    // Make POST request
+    const response = await this.client.post('/analytics/breakdown', payload);
+    const data = response.data;
+
+    // Parse dates in response
+    return {
+      query: {
+        ...data.query,
+        startDate: new Date(data.query.startDate),
+        endDate: new Date(data.query.endDate),
+        executedAt: new Date(data.query.executedAt),
+      },
+      dimension: data.dimension,
+      items: data.items,
+      pagination: data.pagination,
+    };
+  }
+
   private storeTokens(tokens: RowtTokens) {
     localStorage.setItem("access_token", tokens.access_token);
     localStorage.setItem("refresh_token", tokens.refresh_token);
@@ -313,7 +366,7 @@ class RowtConsole {
   }
 
   async updateProject(project: UpdateProjectDTO): Promise<RowtProject> {
-    console.log("Updating project:", project);
+    this.debug.log("Updating project:", project);
     const response: AxiosResponse<RowtProject> = await this.client.post(
       `/projects/update`,
       project,

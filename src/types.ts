@@ -168,19 +168,32 @@ export interface LinkAggregationItem extends AggregationItem {
   linkUrl: string;
 }
 
+export interface AggregationData {
+  items: AggregationItem[];
+  hasMore: boolean;
+}
+
+export interface LinkAggregationData {
+  items: LinkAggregationItem[];
+  hasMore: boolean;
+}
+
 export interface Aggregations {
-  topDestinations: AggregationItem[];
-  topLinks: LinkAggregationItem[];
-  topReferrers: AggregationItem[];
-  topCountries: AggregationItem[];
-  topCities: AggregationItem[];
-  linkTypes: AggregationItem[];
-  topOS: AggregationItem[];
-  topBrowsers: AggregationItem[];
-  topDevices: AggregationItem[];
-  topUtmSources: AggregationItem[];
-  topUtmMediums: AggregationItem[];
-  topUtmCampaigns: AggregationItem[];
+  topDestinations: AggregationData;
+  topLinks: LinkAggregationData;
+  topReferrers: AggregationData;
+  topCountries: AggregationData;
+  topCities: AggregationData;
+  linkTypes: AggregationData;
+  topOS: AggregationData;
+  topBrowsers: AggregationData;
+  topDevices: AggregationData;
+  topUtmSources: AggregationData;
+  topUtmMediums: AggregationData;
+  topUtmCampaigns: AggregationData;
+  topUtmTerms: AggregationData;
+  topUtmContents: AggregationData;
+  topResolvedUrls: AggregationData;
 }
 
 export interface AnalyticsResponse {
@@ -201,8 +214,41 @@ export interface AnalyticsFilters {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  resolvedUrl?: string;
   topN?: number;
   timezone?: string;
+}
+
+export interface AnalyticsBreakdownRequest {
+  projectId: string;
+  dimension: string;
+  startDate: Date;
+  endDate: Date;
+  timezone?: string;
+  limit?: number;
+  offset?: number;
+  filters?: AnalyticsFilters;
+}
+
+export interface AnalyticsBreakdownResponse {
+  query: {
+    projectId: string;
+    dimension: string;
+    startDate: Date;
+    endDate: Date;
+    executedAt: Date;
+    appliedFilters?: Record<string, any>;
+  };
+  dimension: string;
+  items: AggregationItem[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
 }
 
 export interface ObservabilityActor {
