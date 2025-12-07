@@ -25,21 +25,27 @@ interface RefreshSubscriber {
   onError: (error: Error) => void;
 }
 
+export interface RowtConsoleConfig {
+  baseURL: string;
+  debug?: boolean;
+}
+
 class RowtConsole {
-  static DEBUG = false;
   private client: AxiosInstance;
   private isRefreshing = false;
   private refreshSubscribers: RefreshSubscriber[] = [];
+  private debugEnabled: boolean;
 
   private get debug() {
     return new Proxy(console, {
-      get: (target, prop) => RowtConsole.DEBUG ? target[prop as keyof Console] : () => {}
+      get: (target, prop) => this.debugEnabled ? target[prop as keyof Console] : () => {}
     }) as Console;
   }
 
-  constructor(baseURL: string) {
+  constructor(config: RowtConsoleConfig) {
+    this.debugEnabled = config.debug ?? false;
     this.client = axios.create({
-      baseURL,
+      baseURL: config.baseURL,
       headers: {
         "Content-Type": "application/json",
       },
