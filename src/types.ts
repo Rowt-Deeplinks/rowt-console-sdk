@@ -204,3 +204,52 @@ export interface AnalyticsFilters {
   topN?: number;
   timezone?: string;
 }
+
+export interface ObservabilityActor {
+  type: string;
+  id?: string;
+  email?: string;
+}
+
+export interface ObservabilityResource {
+  type: string;
+  id: string;
+  attributes: {
+    url?: string;
+    title?: string;
+    projectId?: string;
+    projectName?: string;
+    [key: string]: any;
+  };
+}
+
+export interface ObservabilityEvent {
+  id: string;
+  type: string;
+  timestamp: Date;
+  actor: ObservabilityActor;
+  resource: ObservabilityResource;
+  metadata: Record<string, any>;
+}
+
+export interface ObservabilityEventsRequest {
+  projectId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  eventTypes?: string[];
+  search?: string;
+  linkId?: string;
+  limit?: number;
+  offset?: number;
+  sortDirection?: 'ASC' | 'DESC';
+}
+
+export interface ObservabilityEventsResponse {
+  events: ObservabilityEvent[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+}

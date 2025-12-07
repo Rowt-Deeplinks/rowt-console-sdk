@@ -4,6 +4,8 @@ import {
   AnalyticsResponse,
   CreateLinkDTO,
   CreateProjectDTO,
+  ObservabilityEventsRequest,
+  ObservabilityEventsResponse,
   RowtGetProjectOptions,
   RowtLoginDTO,
   RowtLoginResponseDTO,
@@ -356,6 +358,33 @@ class RowtConsole {
       link,
     );
     return response.data;
+  }
+
+  async getObservabilityEvents(
+    request?: ObservabilityEventsRequest,
+  ): Promise<ObservabilityEventsResponse> {
+    const payload = {
+      projectId: request?.projectId,
+      startDate: request?.startDate?.toISOString(),
+      endDate: request?.endDate?.toISOString(),
+      eventTypes: request?.eventTypes,
+      search: request?.search,
+      linkId: request?.linkId,
+      limit: request?.limit || 50,
+      offset: request?.offset || 0,
+      sortDirection: request?.sortDirection || 'DESC',
+    };
+
+    const response = await this.client.post('/observability/events', payload);
+    const data = response.data;
+
+    return {
+      events: data.events.map((e: any) => ({
+        ...e,
+        timestamp: new Date(e.timestamp),
+      })),
+      pagination: data.pagination,
+    };
   }
 
   // Validate current tokens by attempting to fetch user profile
