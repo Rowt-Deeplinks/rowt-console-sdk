@@ -42,7 +42,22 @@ export interface RowtTokens {
 
 export interface RowtUpdatePasswordDTO {
   email: string;
+  currentPassword: string;
   password: string;
+}
+
+export interface PasswordRequirements {
+  minLength: number;
+  maxLength: number;
+  requireCapital: boolean;
+  requireLowercase: boolean;
+  requireNumber: boolean;
+  requireSpecialCharacter: boolean;
+}
+
+export interface PasswordValidationError {
+  message: string;
+  passwordRequirements: PasswordRequirements;
 }
 
 export interface RowtUser {

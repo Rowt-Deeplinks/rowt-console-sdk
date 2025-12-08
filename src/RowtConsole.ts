@@ -8,6 +8,7 @@ import {
   CreateProjectDTO,
   ObservabilityEventsRequest,
   ObservabilityEventsResponse,
+  PasswordRequirements,
   RowtGetProjectOptions,
   RowtLoginDTO,
   RowtLoginResponseDTO,
@@ -223,6 +224,18 @@ class RowtConsole {
     const response: AxiosResponse<RowtUser> = await this.client.post(
       "/auth/updatepassword",
       updatePasswordDTO,
+    );
+    return response.data;
+  }
+
+  async getPasswordRequirements(): Promise<PasswordRequirements> {
+    const response: AxiosResponse<PasswordRequirements> = await this.client.get(
+      "/auth/password-requirements",
+      {
+        headers: {
+          Authorization: undefined,
+        },
+      },
     );
     return response.data;
   }
